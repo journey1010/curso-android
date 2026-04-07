@@ -8,8 +8,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.senati.cv.ui.components.CvTextField
+import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvUiState
 
 /**
@@ -96,6 +98,49 @@ fun CvRegisterScreen(
                     Text("Revisar")
                 }
             }
+        )
+    }
+}
+
+@Preview(showSystemUi = true)
+@Composable
+fun CvRegisterScreenPreview() {
+    CvTheme {
+        CvRegisterScreen(
+            uiState = CvUiState(
+                nombre = "Juan Perez",
+                email = "juan@example.com",
+                telefono = "987654321"
+            ),
+            onNombreChange = {},
+            onEmailChange = {},
+            onTelefonoChange = {},
+            onSiguienteClick = {},
+            onConfirmar = {},
+            onCancelarDialogo = {}
+        )
+    }
+}
+
+@Preview(showSystemUi = true, name = "Con Errores")
+@Composable
+fun CvRegisterScreenErrorPreview() {
+    CvTheme {
+        CvRegisterScreen(
+            uiState = CvUiState(
+                nombre = "",
+                email = "correo-invalido",
+                telefono = "123",
+                nombreError = "El nombre es obligatorio",
+                emailError = "Formato de correo inválido",
+                telefonoError = "Mínimo 9 dígitos"
+            ),
+            onNombreChange = {},
+            onEmailChange = {},
+            onTelefonoChange = {},
+            onSiguienteClick = {},
+            onConfirmar = {},
+            onCancelarDialogo = {}
         )
     }
 }

@@ -8,12 +8,15 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import com.senati.cv.ui.screens.CvRegisterScreen
 import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvViewModel
+import com.senati.cv.ui.components.CvTextField
 
 class MainActivity : ComponentActivity() {
     
@@ -49,5 +52,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun CvTextFieldPreview() {
+    CvTheme {
+        CvTextField(value = "Juan Perez", onValueChange = {}, label = "Nombre")
     }
 }
