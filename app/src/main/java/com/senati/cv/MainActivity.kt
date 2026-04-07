@@ -17,6 +17,7 @@ import com.senati.cv.ui.screens.CvRegisterScreen
 import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvViewModel
 import com.senati.cv.ui.components.CvTextField
+import com.senati.cv.viewmodel.CvUiState
 
 class MainActivity : ComponentActivity() {
     
@@ -55,10 +56,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showSystemUi = true)
 @Composable
-fun CvTextFieldPreview() {
+fun MainActivityPreview() {
     CvTheme {
-        CvTextField(value = "Juan Perez", onValueChange = {}, label = "Nombre")
+        CvRegisterScreen(
+            uiState = CvUiState(),
+            onNombreChange = {},
+            onEmailChange = {},
+            onTelefonoChange = {},
+            onSiguienteClick = {},
+            onConfirmar = {},
+            onCancelarDialogo = {}
+        )
     }
 }
