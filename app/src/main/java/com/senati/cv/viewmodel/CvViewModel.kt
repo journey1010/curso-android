@@ -7,25 +7,49 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Representa el estado de la interfaz de usuario para el registro de CV.
+ * Representa los diferentes pasos del registro de CV.
+ * En web, esto sería similar a las rutas de un formulario multi-step.
+ */
+enum class RegistrationStep {
+    PERSONAL_DATA,
+    EDUCATION,
+    EXPERIENCE,
+    SUMMARY
+}
+
+/**
+ * UiState: El ÚNICO objeto que define qué se muestra en pantalla.
+ * Es como el "ViewModel" o "Data object" que pasarías a una vista en Laravel.
  */
 data class CvUiState(
+    val currentStep: RegistrationStep = RegistrationStep.PERSONAL_DATA,
+    
+    // Datos Personales (Form Fields)
     val name: String = "",
     val email: String = "",
     val phone: String = "",
+    
+    // Errores de validación (Como el $errors de Laravel)
     val nameError: String? = null,
     val emailError: String? = null,
     val phoneError: String? = null,
-    val showDialog: Boolean = false
+    
+    // Estado de la UI
+    val showConfirmDialog: Boolean = false,
+    val isRegistrationComplete: Boolean = false
 )
 
+/**
+ * ViewModel: El "Cerebro". 
+ * Actúa como un Controller que mantiene el estado (como una sesión o un Store).
+ */
 class CvViewModel : ViewModel() {
 
-    // Estado interno (mutable) y estado público (solo lectura) siguiendo la arquitectura de Google
     private val _uiState = MutableStateFlow(CvUiState())
     val uiState: StateFlow<CvUiState> = _uiState.asStateFlow()
 
-    // Funciones para actualizar el estado cuando el usuario escribe
+    // --- Actions (Handlers) ---
+
     fun onNameChange(newName: String) {
         _uiState.update { it.copy(name = newName, nameError = null) }
     }
@@ -38,33 +62,59 @@ class CvViewModel : ViewModel() {
         _uiState.update { it.copy(phone = newPhone, phoneError = null) }
     }
 
-    // Control del diálogo de confirmación
-    fun showDialog(show: Boolean) {
-        _uiState.update { it.copy(showDialog = show) }
+    fun setShowDialog(show: Boolean) {
+        _uiState.update { it.copy(showConfirmDialog = show) }
     }
 
     /**
-     * Valida los datos ingresados. Retorna true si todo es correcto.
+     * Lógica del botón "Siguiente".
+     * Primero valida, si es correcto, pide confirmación.
      */
-    fun validateData(): Boolean {
-        val stateCurrent = _uiState.value
-        var isValid = true
-
-        val errorName = if (stateCurrent.name.isBlank()) "El nombre es obligatorio" else null
-        val errorEmail = if (!android.util.Patterns.EMAIL_ADDRESS.matcher(stateCurrent.email).matches()) "Email inválido" else null
-        val errorPhone = if (stateCurrent.phone.length < 9) "Teléfono debe tener al menos 9 dígitos" else null
-
-        if (errorName != null || errorEmail != null || errorName != null) {
-            isValid = false
+    fun onNextClicked() {
+        if (validatePersonalData()) {
+            setShowDialog(true)
         }
+    }
+
+    /**
+     * Confirmación final del paso actual.
+     * Mueve el estado al siguiente paso.
+     */
+    fun confirmAndContinue() {
+        _uiState.update { state ->
+            when (state.currentStep) {
+                RegistrationStep.PERSONAL_DATA -> state.copy(
+                    currentStep = RegistrationStep.EDUCATION,
+                    showConfirmDialog = false
+                )
+                else -> state.copy(showConfirmDialog = false)
+            }
+        }
+    }
+
+    /**
+     * Validación de los campos.
+     * Similar a un FormRequest en Laravel.
+     */
+    private fun validatePersonalData(): Boolean {
+        val current = _uiState.value
+        
+        val nameErr = if (current.name.isBlank()) "El nombre es requerido" else null
+        val emailErr = when {
+            current.email.isBlank() -> "El email es requerido"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(current.email).matches() -> "Email inválido"
+            else -> null
+        }
+        val phoneErr = if (current.phone.length < 9) "Mínimo 9 dígitos" else null
 
         _uiState.update {
             it.copy(
-                nameError = errorName,
-                emailError = errorEmail,
-                phoneError = errorPhone
+                nameError = nameErr,
+                emailError = emailErr,
+                phoneError = phoneErr
             )
         }
-        return isValid
+
+        return nameErr == null && emailErr == null && phoneErr == null
     }
 }
