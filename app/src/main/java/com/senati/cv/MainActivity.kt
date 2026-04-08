@@ -16,7 +16,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.senati.cv.ui.screens.CvRegisterScreen
 import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvViewModel
-import com.senati.cv.ui.components.CvTextField
 import com.senati.cv.viewmodel.CvUiState
 
 class MainActivity : ComponentActivity() {
