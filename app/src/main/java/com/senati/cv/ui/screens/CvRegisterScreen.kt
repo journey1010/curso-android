@@ -1,3 +1,4 @@
+// Paquete que define la pantalla principal dentro de la estructura de navegación
 package com.senati.cv.ui.screens
 
 import android.widget.Toast
@@ -15,36 +16,40 @@ import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvUiState
 
 /**
- * Pantalla de registro. Es una "Stateless Composable" ya que recibe el estado
- * y los eventos, facilitando las pruebas y la previsualización.
+ * Pantalla de registro de CV.
+ * Es una "Stateless Composable": No gestiona su propio estado, solo lo "dibuja".
+ * Recibe el estado (uiState) y los eventos (lambdas) desde un nivel superior (generalmente el NavHost).
  */
 @Composable
 fun CvRegisterScreen(
-    uiState: CvUiState,
-    onNombreChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onTelefonoChange: (String) -> Unit,
-    onSiguienteClick: () -> Unit,
-    onConfirmar: () -> Unit,
-    onCancelarDialogo: () -> Unit,
+    uiState: CvUiState,               // Recibe el objeto inmutable con los datos actuales
+    onNombreChange: (String) -> Unit, // Callback para cuando cambia el nombre
+    onEmailChange: (String) -> Unit,  // Callback para cuando cambia el email
+    onTelefonoChange: (String) -> Unit, // Callback para el teléfono
+    onSiguienteClick: () -> Unit,     // Acción al presionar el botón principal
+    onConfirmar: () -> Unit,          // Acción al aceptar el diálogo
+    onCancelarDialogo: () -> Unit,    // Acción al cerrar el diálogo
     modifier: Modifier = Modifier
 ) {
+    // Obtenemos el contexto actual de la aplicación para mostrar Toasts
     val context = LocalContext.current
 
     Column(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxSize() // Ocupa todo el espacio de la pantalla
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalAlignment = Alignment.CenterHorizontally, // Centra los elementos horizontalmente
+        verticalArrangement = Arrangement.spacedBy(16.dp)    // Espaciado uniforme entre componentes
     ) {
+        // Título de la sección usando la tipografía de Material 3
         Text(
             text = "Datos Personales",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.primary
         )
 
-        // Usamos nuestro componente personalizado
+        // Inserción de nuestros componentes personalizados CvTextField
+        // Se conectan directamente con el estado y las funciones del ViewModel
         CvTextField(
             value = uiState.nombre,
             onValueChange = onNombreChange,
@@ -57,7 +62,7 @@ fun CvRegisterScreen(
             onValueChange = onEmailChange,
             label = "Correo Electrónico",
             error = uiState.emailError,
-            keyboardType = KeyboardType.Email
+            keyboardType = KeyboardType.Email // Configura el teclado para mostrar el @
         )
 
         CvTextField(
@@ -65,11 +70,13 @@ fun CvRegisterScreen(
             onValueChange = onTelefonoChange,
             label = "Teléfono",
             error = uiState.telefonoError,
-            keyboardType = KeyboardType.Phone
+            keyboardType = KeyboardType.Phone // Configura el teclado numérico
         )
 
+        // El Spacer con weight(1f) empuja el botón hacia la parte inferior
         Spacer(modifier = Modifier.weight(1f))
 
+        // Botón principal de acción
         Button(
             onClick = onSiguienteClick,
             modifier = Modifier.fillMaxWidth(),
@@ -79,7 +86,10 @@ fun CvRegisterScreen(
         }
     }
 
-    // Diálogo de confirmación
+    /**
+     * Lógica condicional para el Diálogo de Confirmación.
+     * En Compose, los diálogos no se "llaman", se "muestran" según el estado.
+     */
     if (uiState.mostrarDialogo) {
         AlertDialog(
             onDismissRequest = onCancelarDialogo,
@@ -88,6 +98,7 @@ fun CvRegisterScreen(
             confirmButton = {
                 TextButton(onClick = {
                     onConfirmar()
+                    // Feedback visual rápido al usuario
                     Toast.makeText(context, "Datos validados correctamente", Toast.LENGTH_SHORT).show()
                 }) {
                     Text("Sí, Siguiente")
@@ -102,6 +113,9 @@ fun CvRegisterScreen(
     }
 }
 
+/**
+ * Previsualización estándar de la pantalla con datos de ejemplo.
+ */
 @Preview(showSystemUi = true)
 @Composable
 fun CvRegisterScreenPreview() {
@@ -122,6 +136,9 @@ fun CvRegisterScreenPreview() {
     }
 }
 
+/**
+ * Previsualización específica para verificar cómo se ven los errores en la pantalla completa.
+ */
 @Preview(showSystemUi = true, name = "Con Errores")
 @Composable
 fun CvRegisterScreenErrorPreview() {
