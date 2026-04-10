@@ -1,3 +1,4 @@
+// Paquete que ubica la clase en la capa de lógica de presentación (ViewModel)
 package com.senati.cv.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -7,19 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Representa los diferentes pasos del registro de CV.
- * En web, esto sería similar a las rutas de un formulario multi-step.
- */
-enum class RegistrationStep {
-    PERSONAL_DATA,
-    EDUCATION,
-    EXPERIENCE,
-    SUMMARY
-}
-
-/**
- * UiState: El ÚNICO objeto que define qué se muestra en pantalla.
- * Es como el "ViewModel" o "Data object" que pasarías a una vista en Laravel.
+ * Data Class que centraliza el estado de la UI (Single Source of Truth).
+ * Representa "qué" debe mostrar la pantalla en un momento dado.
  */
 data class CvUiState(
     val currentStep: RegistrationStep = RegistrationStep.PERSONAL_DATA,
@@ -32,43 +22,56 @@ data class CvUiState(
     // Errores de validación (Como el $errors de Laravel)
     val nameError: String? = null,
     val emailError: String? = null,
-    val phoneError: String? = null,
-    
-    // Estado de la UI
-    val showConfirmDialog: Boolean = false,
-    val isRegistrationComplete: Boolean = false
+    val telefonoError: String? = null,
+    val mostrarDialogo: Boolean = false // Controla la visibilidad de alertas/modales
 )
 
 /**
- * ViewModel: El "Cerebro". 
- * Actúa como un Controller que mantiene el estado (como una sesión o un Store).
+ * ViewModel encargado de gestionar la lógica del formulario de CV.
+ * Sobrevive a cambios de configuración (como rotar la pantalla).
  */
 class CvViewModel : ViewModel() {
 
+    // _uiState: Estado interno mutable (privado). Solo el ViewModel puede modificarlo.
     private val _uiState = MutableStateFlow(CvUiState())
+
+    // uiState: Estado expuesto como flujo de solo lectura para la UI (Compose).
+    // Usamos asStateFlow() para evitar que la View pueda modificar el estado directamente.
     val uiState: StateFlow<CvUiState> = _uiState.asStateFlow()
 
-    // --- Actions (Handlers) ---
-
-    fun onNameChange(newName: String) {
-        _uiState.update { it.copy(name = newName, nameError = null) }
-    }
-
-    fun onEmailChange(newEmail: String) {
-        _uiState.update { it.copy(email = newEmail, emailError = null) }
-    }
-
-    fun onPhoneChange(newPhone: String) {
-        _uiState.update { it.copy(phone = newPhone, phoneError = null) }
-    }
-
-    fun setShowDialog(show: Boolean) {
-        _uiState.update { it.copy(showConfirmDialog = show) }
+    /**
+     * Actualiza el nombre en el estado. 
+     * Al usar .update { it.copy(...) }, aseguramos la inmutabilidad y seguridad entre hilos.
+     */
+    fun onNombreChange(nuevoNombre: String) {
+        _uiState.update { it.copy(nombre = nuevoNombre, nombreError = null) }
     }
 
     /**
-     * Lógica del botón "Siguiente".
-     * Primero valida, si es correcto, pide confirmación.
+     * Actualiza el email y limpia el mensaje de error mientras el usuario escribe.
+     */
+    fun onEmailChange(nuevoEmail: String) {
+        _uiState.update { it.copy(email = nuevoEmail, emailError = null) }
+    }
+
+    /**
+     * Actualiza el teléfono aplicando la misma lógica de limpieza de errores.
+     */
+    fun onTelefonoChange(nuevoTelefono: String) {
+        _uiState.update { it.copy(telefono = nuevoTelefono, telefonoError = null) }
+    }
+
+    /**
+     * Cambia el estado del booleano para mostrar u ocultar el diálogo de éxito/confirmación.
+     */
+    fun mostrarConfirmacion(mostrar: Boolean) {
+        _uiState.update { it.copy(mostrarDialogo = mostrar) }
+    }
+
+    /**
+     * Lógica de validación de negocio.
+     * Evalúa el estado actual y actualiza los campos de error si es necesario.
+     * @return true si todos los datos cumplen los criterios.
      */
     fun onNextClicked() {
         if (validatePersonalData()) {
@@ -76,37 +79,22 @@ class CvViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Confirmación final del paso actual.
-     * Mueve el estado al siguiente paso.
-     */
-    fun confirmAndContinue() {
-        _uiState.update { state ->
-            when (state.currentStep) {
-                RegistrationStep.PERSONAL_DATA -> state.copy(
-                    currentStep = RegistrationStep.EDUCATION,
-                    showConfirmDialog = false
-                )
-                else -> state.copy(showConfirmDialog = false)
-            }
-        }
-    }
+        // Validación de campos vacíos
+        val errorNombre = if (estadoActual.nombre.isBlank()) "El nombre es obligatorio" else null
 
-    /**
-     * Validación de los campos.
-     * Similar a un FormRequest en Laravel.
-     */
-    private fun validatePersonalData(): Boolean {
-        val current = _uiState.value
-        
-        val nameErr = if (current.name.isBlank()) "El nombre es requerido" else null
-        val emailErr = when {
-            current.email.isBlank() -> "El email es requerido"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(current.email).matches() -> "Email inválido"
-            else -> null
+        // Uso de Patterns de Android para validar formato de correo
+        val errorEmail = if (!android.util.Patterns.EMAIL_ADDRESS.matcher(estadoActual.email).matches()) "Email inválido" else null
+
+        // Validación de longitud mínima para teléfonos (ej. formato peruano)
+        val errorTelefono = if (estadoActual.telefono.length < 9) "Teléfono debe tener al menos 9 dígitos" else null
+
+        // Si cualquier error existe, la validación general falla
+        if (errorNombre != null || errorEmail != null || errorTelefono != null) {
+            esValido = false
         }
         val phoneErr = if (current.phone.length < 9) "Mínimo 9 dígitos" else null
 
+        // Se "dispara" la actualización del estado con todos los errores encontrados
         _uiState.update {
             it.copy(
                 nameError = nameErr,
