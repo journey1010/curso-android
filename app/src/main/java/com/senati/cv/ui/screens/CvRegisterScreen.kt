@@ -8,12 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.senati.cv.ui.components.CvTextField
 import com.senati.cv.ui.theme.CvTheme
 import com.senati.cv.viewmodel.CvUiState
+import com.senati.cv.viewmodel.RegistrationStep
 
 /**
  * Pantalla de registro de CV.
@@ -34,6 +37,62 @@ fun CvRegisterScreen(
     // Obtenemos el contexto actual de la aplicación para mostrar Toasts
     val context = LocalContext.current
 
+    // Similar a un switch en un controller de Laravel que carga diferentes vistas.
+    Box(modifier = modifier.fillMaxSize()) {
+        when (uiState.currentStep) {
+            RegistrationStep.PERSONAL_DATA -> {
+                PersonalDataStep(
+                    uiState = uiState,
+                    onNameChange = onNameChange,
+                    onEmailChange = onEmailChange,
+                    onPhoneChange = onPhoneChange,
+                    onNextClicked = onNextClicked
+                )
+            }
+            RegistrationStep.EDUCATION -> {
+                // Siguiente pantalla (Placeholder por ahora)
+                StepPlaceholder(title = "Formación Académica")
+            }
+            else -> {
+                StepPlaceholder(title = "Próximamente...")
+            }
+        }
+
+        // Diálogo de confirmación: Funciona como un "SweetAlert" o modal de confirmación
+        if (uiState.showConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = onDismissDialog,
+                title = { Text("Confirmar Datos") },
+                text = { Text("¿Deseas guardar estos datos y pasar al siguiente paso?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onConfirm()
+                        Toast.makeText(context, "Paso completado", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text("Confirmar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = onDismissDialog) {
+                        Text("Revisar")
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Vista específica para el Paso 1: Datos Personales.
+ */
+@Composable
+fun PersonalDataStep(
+    uiState: CvUiState,
+    onNameChange: (String) -> Unit,
+    onEmailChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onNextClicked: () -> Unit
+) {
     Column(
         modifier = modifier
             .fillMaxSize() // Ocupa todo el espacio de la pantalla
@@ -43,31 +102,32 @@ fun CvRegisterScreen(
     ) {
         // Título de la sección usando la tipografía de Material 3
         Text(
-            text = "Datos Personales",
-            style = MaterialTheme.typography.headlineMedium,
+            text = "Paso 1: Datos Personales",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
 
         // Inserción de nuestros componentes personalizados CvTextField
         // Se conectan directamente con el estado y las funciones del ViewModel
         CvTextField(
-            value = uiState.nombre,
-            onValueChange = onNombreChange,
+            value = uiState.name,
+            onValueChange = onNameChange,
             label = "Nombre Completo",
-            error = uiState.nombreError
+            error = uiState.nameError
         )
 
         CvTextField(
             value = uiState.email,
             onValueChange = onEmailChange,
-            label = "Correo Electrónico",
+            label = "Email",
             error = uiState.emailError,
             keyboardType = KeyboardType.Email // Configura el teclado para mostrar el @
         )
 
         CvTextField(
-            value = uiState.telefono,
-            onValueChange = onTelefonoChange,
+            value = uiState.phone,
+            onValueChange = onPhoneChange,
             label = "Teléfono",
             error = uiState.telefonoError,
             keyboardType = KeyboardType.Phone // Configura el teclado numérico
@@ -78,13 +138,14 @@ fun CvRegisterScreen(
 
         // Botón principal de acción
         Button(
-            onClick = onSiguienteClick,
+            onClick = onNextClicked,
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium
         ) {
             Text("Siguiente")
         }
     }
+}
 
     /**
      * Lógica condicional para el Diálogo de Confirmación.
@@ -122,16 +183,16 @@ fun CvRegisterScreenPreview() {
     CvTheme {
         CvRegisterScreen(
             uiState = CvUiState(
-                nombre = "Juan Perez",
+                name = "Juan Perez",
                 email = "juan@example.com",
-                telefono = "987654321"
+                phone = "987654321"
             ),
-            onNombreChange = {},
+            onNameChange = {},
             onEmailChange = {},
-            onTelefonoChange = {},
-            onSiguienteClick = {},
-            onConfirmar = {},
-            onCancelarDialogo = {}
+            onPhoneChange = {},
+            onNextClicked = {},
+            onConfirm = {},
+            onDismissDialog = {}
         )
     }
 }
@@ -145,19 +206,40 @@ fun CvRegisterScreenErrorPreview() {
     CvTheme {
         CvRegisterScreen(
             uiState = CvUiState(
-                nombre = "",
+                name = "",
                 email = "correo-invalido",
-                telefono = "123",
-                nombreError = "El nombre es obligatorio",
-                emailError = "Formato de correo inválido",
-                telefonoError = "Mínimo 9 dígitos"
+                phone = "123",
+                nameError = "El nombre es requerido",
+                emailError = "Formato inválido",
+                phoneError = "Mínimo 9 dígitos"
             ),
-            onNombreChange = {},
+            onNameChange = {},
             onEmailChange = {},
-            onTelefonoChange = {},
-            onSiguienteClick = {},
-            onConfirmar = {},
-            onCancelarDialogo = {}
+            onPhoneChange = {},
+            onNextClicked = {},
+            onConfirm = {},
+            onDismissDialog = {}
+        )
+    }
+}
+
+@Preview(showSystemUi = true, name = "Diálogo de Confirmación")
+@Composable
+fun CvRegisterScreenDialogPreview() {
+    CvTheme {
+        CvRegisterScreen(
+            uiState = CvUiState(
+                name = "Juan Perez",
+                email = "juan@example.com",
+                phone = "987654321",
+                showConfirmDialog = true
+            ),
+            onNameChange = {},
+            onEmailChange = {},
+            onPhoneChange = {},
+            onNextClicked = {},
+            onConfirm = {},
+            onDismissDialog = {}
         )
     }
 }

@@ -12,10 +12,15 @@ import kotlinx.coroutines.flow.update
  * Representa "qué" debe mostrar la pantalla en un momento dado.
  */
 data class CvUiState(
-    val nombre: String = "",
+    val currentStep: RegistrationStep = RegistrationStep.PERSONAL_DATA,
+    
+    // Datos Personales (Form Fields)
+    val name: String = "",
     val email: String = "",
-    val telefono: String = "",
-    val nombreError: String? = null,
+    val phone: String = "",
+    
+    // Errores de validación (Como el $errors de Laravel)
+    val nameError: String? = null,
     val emailError: String? = null,
     val telefonoError: String? = null,
     val mostrarDialogo: Boolean = false // Controla la visibilidad de alertas/modales
@@ -68,9 +73,11 @@ class CvViewModel : ViewModel() {
      * Evalúa el estado actual y actualiza los campos de error si es necesario.
      * @return true si todos los datos cumplen los criterios.
      */
-    fun validarDatos(): Boolean {
-        val estadoActual = _uiState.value
-        var esValido = true
+    fun onNextClicked() {
+        if (validatePersonalData()) {
+            setShowDialog(true)
+        }
+    }
 
         // Validación de campos vacíos
         val errorNombre = if (estadoActual.nombre.isBlank()) "El nombre es obligatorio" else null
@@ -85,15 +92,17 @@ class CvViewModel : ViewModel() {
         if (errorNombre != null || errorEmail != null || errorTelefono != null) {
             esValido = false
         }
+        val phoneErr = if (current.phone.length < 9) "Mínimo 9 dígitos" else null
 
         // Se "dispara" la actualización del estado con todos los errores encontrados
         _uiState.update {
             it.copy(
-                nombreError = errorNombre,
-                emailError = errorEmail,
-                telefonoError = errorTelefono
+                nameError = nameErr,
+                emailError = emailErr,
+                phoneError = phoneErr
             )
         }
-        return esValido
+
+        return nameErr == null && emailErr == null && phoneErr == null
     }
 }
