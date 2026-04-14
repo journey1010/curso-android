@@ -1,192 +1,120 @@
 package com.senati.cv.ui.screens
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.senati.cv.ui.components.CvTextField
-import com.senati.cv.ui.theme.CvTheme
+import com.senati.cv.domain.model.AcademicLevel
+import com.senati.cv.domain.model.Certificate
+import com.senati.cv.domain.model.MaritalStatus
+import com.senati.cv.domain.model.RegistrationStep
+import com.senati.cv.ui.components.StepIndicator
 import com.senati.cv.viewmodel.CvUiState
-import com.senati.cv.viewmodel.RegistrationStep
 
-/**
- * Pantalla de registro de CV.
- * Es una "Stateless Composable": No gestiona su propio estado, solo lo "dibuja".
- */
 @Composable
 fun CvRegisterScreen(
     uiState: CvUiState,
-    onNameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
+    // Personal data
+    onDniChange: (String) -> Unit,
+    onFirstNameChange: (String) -> Unit,
+    onLastNameChange: (String) -> Unit,
+    onAddressChange: (String) -> Unit,
+    onMaritalStatusChange: (MaritalStatus) -> Unit,
+    onPhotoUriChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
-    onNextClicked: () -> Unit,
+    onEmailChange: (String) -> Unit,
+    onNextFromPersonalData: () -> Unit,
+    // Education
+    onUniversityNameChange: (String) -> Unit,
+    onUniversityCareerChange: (String) -> Unit,
+    onUniversityStartDateChange: (String) -> Unit,
+    onUniversityEndDateChange: (String) -> Unit,
+    onStillAttendingChange: (Boolean) -> Unit,
+    onSchoolNameChange: (String) -> Unit,
+    onMaxAcademicLevelChange: (AcademicLevel) -> Unit,
+    onNextFromEducation: () -> Unit,
+    // Certificates
+    onCertNameChange: (String) -> Unit,
+    onCertInstitutionChange: (String) -> Unit,
+    onCertDateChange: (String) -> Unit,
+    onCertDescriptionChange: (String) -> Unit,
+    onAddCertificate: () -> Unit,
+    onRemoveCertificate: (Certificate) -> Unit,
+    onSaveCv: () -> Unit,
+    // Navigation
+    onBackClicked: () -> Unit,
     onConfirm: () -> Unit,
     onDismissDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    Column(modifier = modifier.fillMaxSize()) {
+        StepIndicator(
+            currentStep = uiState.currentStep,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
 
-    Box(modifier = modifier.fillMaxSize()) {
-        when (uiState.currentStep) {
-            RegistrationStep.PERSONAL_DATA -> {
-                PersonalDataStep(
-                    uiState = uiState,
-                    onNameChange = onNameChange,
-                    onEmailChange = onEmailChange,
+        Box(modifier = Modifier.weight(1f)) {
+            when (uiState.currentStep) {
+                RegistrationStep.PERSONAL_DATA -> PersonalDataStep(
+                    state = uiState.personalData,
+                    onDniChange = onDniChange,
+                    onFirstNameChange = onFirstNameChange,
+                    onLastNameChange = onLastNameChange,
+                    onAddressChange = onAddressChange,
+                    onMaritalStatusChange = onMaritalStatusChange,
+                    onPhotoUriChange = onPhotoUriChange,
                     onPhoneChange = onPhoneChange,
-                    onNextClicked = onNextClicked
+                    onEmailChange = onEmailChange,
+                    onNextClicked = onNextFromPersonalData
+                )
+
+                RegistrationStep.EDUCATION -> EducationStep(
+                    state = uiState.education,
+                    onUniversityNameChange = onUniversityNameChange,
+                    onUniversityCareerChange = onUniversityCareerChange,
+                    onStartDateChange = onUniversityStartDateChange,
+                    onEndDateChange = onUniversityEndDateChange,
+                    onStillAttendingChange = onStillAttendingChange,
+                    onSchoolNameChange = onSchoolNameChange,
+                    onMaxAcademicLevelChange = onMaxAcademicLevelChange,
+                    onNextClicked = onNextFromEducation,
+                    onBackClicked = onBackClicked
+                )
+
+                RegistrationStep.CERTIFICATES -> CertificatesStep(
+                    state = uiState.certificates,
+                    onNameChange = onCertNameChange,
+                    onInstitutionChange = onCertInstitutionChange,
+                    onDateChange = onCertDateChange,
+                    onDescriptionChange = onCertDescriptionChange,
+                    onAddCertificate = onAddCertificate,
+                    onRemoveCertificate = onRemoveCertificate,
+                    onSave = onSaveCv,
+                    onBackClicked = onBackClicked,
+                    isSaving = uiState.isSaving
                 )
             }
-            RegistrationStep.EDUCATION -> {
-                StepPlaceholder(title = "Formación Académica")
-            }
-            else -> {
-                StepPlaceholder(title = "Próximamente...")
-            }
-        }
 
-        // Diálogo de confirmación
-        if (uiState.showConfirmDialog) {
-            AlertDialog(
-                onDismissRequest = onDismissDialog,
-                title = { Text("Confirmar Datos") },
-                text = { Text("¿Deseas guardar estos datos y pasar al siguiente paso?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        onConfirm()
-                        Toast.makeText(context, "Paso completado", Toast.LENGTH_SHORT).show()
-                    }) {
-                        Text("Confirmar")
+            if (uiState.showConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = onDismissDialog,
+                    title = { Text("Confirmar datos") },
+                    text = { Text("¿Los datos son correctos? Continuarás al siguiente paso.") },
+                    confirmButton = {
+                        TextButton(onClick = onConfirm) { Text("Continuar") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = onDismissDialog) { Text("Revisar") }
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = onDismissDialog) {
-                        Text("Revisar")
-                    }
-                }
-            )
+                )
+            }
         }
-    }
-}
-
-/**
- * Vista específica para el Paso 1: Datos Personales.
- */
-@Composable
-fun PersonalDataStep(
-    uiState: CvUiState,
-    onNameChange: (String) -> Unit,
-    onEmailChange: (String) -> Unit,
-    onPhoneChange: (String) -> Unit,
-    onNextClicked: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Paso 1: Datos Personales",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        CvTextField(
-            value = uiState.name,
-            onValueChange = onNameChange,
-            label = "Nombre Completo",
-            error = uiState.nameError
-        )
-
-        CvTextField(
-            value = uiState.email,
-            onValueChange = onEmailChange,
-            label = "Email",
-            error = uiState.emailError,
-            keyboardType = KeyboardType.Email
-        )
-
-        CvTextField(
-            value = uiState.phone,
-            onValueChange = onPhoneChange,
-            label = "Teléfono",
-            error = uiState.phoneError,
-            keyboardType = KeyboardType.Phone
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        Button(
-            onClick = onNextClicked,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text("Siguiente")
-        }
-    }
-}
-
-@Composable
-fun StepPlaceholder(title: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = title, fontSize = 20.sp)
-    }
-}
-
-/**
- * Previsualización estándar
- */
-@Preview(showSystemUi = true)
-@Composable
-fun CvRegisterScreenPreview() {
-    CvTheme {
-        CvRegisterScreen(
-            uiState = CvUiState(
-                name = "Juan Perez",
-                email = "juan@example.com",
-                phone = "987654321"
-            ),
-            onNameChange = {},
-            onEmailChange = {},
-            onPhoneChange = {},
-            onNextClicked = {},
-            onConfirm = {},
-            onDismissDialog = {}
-        )
-    }
-}
-
-@Preview(showSystemUi = true, name = "Con Errores")
-@Composable
-fun CvRegisterScreenErrorPreview() {
-    CvTheme {
-        CvRegisterScreen(
-            uiState = CvUiState(
-                name = "",
-                email = "correo-invalido",
-                phone = "123",
-                nameError = "El nombre es requerido",
-                emailError = "Formato inválido",
-                phoneError = "Mínimo 9 dígitos"
-            ),
-            onNameChange = {},
-            onEmailChange = {},
-            onPhoneChange = {},
-            onNextClicked = {},
-            onConfirm = {},
-            onDismissDialog = {}
-        )
     }
 }

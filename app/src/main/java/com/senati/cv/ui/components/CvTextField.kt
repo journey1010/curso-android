@@ -26,16 +26,18 @@ fun CvTextField(
     label: String,
     modifier: Modifier = Modifier,
     error: String? = null,
+    placeholder: String? = null,
+    enabled: Boolean = true,
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        placeholder = placeholder?.let { { Text(it) } },
         isError = error != null,
-        supportingText = {
-            error?.let { Text(it) }
-        },
+        enabled = enabled,
+        supportingText = { error?.let { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         modifier = modifier.fillMaxWidth(),
         singleLine = true

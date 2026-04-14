@@ -17,32 +17,45 @@ import com.senati.cv.viewmodel.CvViewModel
 
 class MainActivity : ComponentActivity() {
 
-    // El ViewModel se inicializa usando el delegado 'by viewModels()'
-    // Esto asegura que el ViewModel sobreviva a cambios de configuración (como rotar la pantalla)
-    private val viewModel: CvViewModel by viewModels()
+    private val viewModel: CvViewModel by viewModels {
+        (application as CvApplication).appContainer.cvViewModelFactory
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Habilita el diseño de borde a borde (edge-to-edge)
         enableEdgeToEdge()
-        
         setContent {
             CvTheme {
-                // Obtenemos el estado actual del ViewModel. 
-                // Al usar 'collectAsState()', Compose se recompondrá automáticamente cada vez que el estado cambie.
                 val uiState by viewModel.uiState.collectAsState()
-
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Inyectamos la pantalla principal pasando el estado y los eventos (lambdas)
-                    // Esta separación permite que la UI sea fácil de testear y previsualizar.
                     CvRegisterScreen(
                         modifier = Modifier.padding(innerPadding),
                         uiState = uiState,
-                        onNameChange = viewModel::onNameChange,
-                        onEmailChange = viewModel::onEmailChange,
+                        onDniChange = viewModel::onDniChange,
+                        onFirstNameChange = viewModel::onFirstNameChange,
+                        onLastNameChange = viewModel::onLastNameChange,
+                        onAddressChange = viewModel::onAddressChange,
+                        onMaritalStatusChange = viewModel::onMaritalStatusChange,
+                        onPhotoUriChange = viewModel::onPhotoUriChange,
                         onPhoneChange = viewModel::onPhoneChange,
-                        onNextClicked = viewModel::onNextClicked,
+                        onEmailChange = viewModel::onEmailChange,
+                        onNextFromPersonalData = viewModel::onNextFromPersonalData,
+                        onUniversityNameChange = viewModel::onUniversityNameChange,
+                        onUniversityCareerChange = viewModel::onUniversityCareerChange,
+                        onUniversityStartDateChange = viewModel::onUniversityStartDateChange,
+                        onUniversityEndDateChange = viewModel::onUniversityEndDateChange,
+                        onStillAttendingChange = viewModel::onStillAttendingChange,
+                        onSchoolNameChange = viewModel::onSchoolNameChange,
+                        onMaxAcademicLevelChange = viewModel::onMaxAcademicLevelChange,
+                        onNextFromEducation = viewModel::onNextFromEducation,
+                        onCertNameChange = viewModel::onCertNameChange,
+                        onCertInstitutionChange = viewModel::onCertInstitutionChange,
+                        onCertDateChange = viewModel::onCertDateChange,
+                        onCertDescriptionChange = viewModel::onCertDescriptionChange,
+                        onAddCertificate = viewModel::addCertificate,
+                        onRemoveCertificate = viewModel::removeCertificate,
+                        onSaveCv = viewModel::saveCv,
+                        onBackClicked = viewModel::onBackClicked,
                         onConfirm = viewModel::confirmAndContinue,
                         onDismissDialog = { viewModel.setShowDialog(false) }
                     )
