@@ -1,8 +1,11 @@
 package com.senati.cv.presentation.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -23,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.senati.cv.presentation.form.CvFormState
 import com.senati.cv.presentation.form.CvFormViewModel
@@ -105,16 +109,34 @@ fun PersonalInfoStep(state: CvFormState, viewModel: CvFormViewModel) {
         }
     }
 
+    // Launcher para Permiso de Cámara
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = createImageFile()
+            tempUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Toast.makeText(context, "Permiso de cámara denegado. No se puede tomar la foto.", Toast.LENGTH_LONG).show()
+        }
+    }
+
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             title = { Text("Seleccionar Foto") },
-            text = { Text("Elija una opción para cargar su foto de perfil.") },
+            text = { Text("Elija una opción para cargar su foto de perfil. Se requiere permiso de cámara para capturar una nueva foto.") },
             confirmButton = {
                 TextButton(onClick = {
-                    val uri = createImageFile()
-                    tempUri = uri
-                    cameraLauncher.launch(uri)
+                    val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                    if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+                        val uri = createImageFile()
+                        tempUri = uri
+                        cameraLauncher.launch(uri)
+                    } else {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
                     showDialog = false
                 }) {
                     Text("Cámara")
